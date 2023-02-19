@@ -1,0 +1,8 @@
+{
+  "name": "custom server (localhost)",
+  "email": "local@host",
+  "token": "l0calh0st!",
+  "addr": "localhost",
+  "port": 3000,
+  "root_addr": "ws://192.9.164.94:8080"
+}

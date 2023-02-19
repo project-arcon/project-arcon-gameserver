@@ -1,0 +1,15 @@
+{
+  "name": "arcon-server",
+  "version": "0.1.0",
+  "description": "arcon server",
+  "main": "server.js",
+  "dependencies": {
+    "ws": "^6.1.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "register": "node register.js",
+    "start": "node server.js"
+  },
+  "author": "vax"
+}
