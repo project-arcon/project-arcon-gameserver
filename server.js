@@ -27,13 +27,11 @@ global.sim = new Sim();
 Sim.prototype.cheatSimInterval = -12;
 Sim.prototype.lastSimInterval = 0;
 
+var root = null;
+
 global.Server = function () {
-  this.joinList = {};
-
   var wss = new WebSocket.Server({ port: process.env.PORT || config.port });
-  var root = null;
   var players = {};
-
   this.queued = {};
 
   var lastInfoTime = 0;
@@ -231,15 +229,17 @@ global.Server = function () {
 };
 
 global.server = new Server();
-
 const originalEndOfGame = Sim.prototype.endOfGame;
 Sim.prototype.endOfGame = function () {
-  server.root.sendData([
+  root.sendData([
     "game_report",
     {
-      winningSide: this.winningSide,
+      ending_method: "unknow",
+      winning_side: this.winningSide,
       step: this.step,
-      serverType: this.serverType,
+      realtime: 0,
+      mode: this.serverType,
+      map_seed: "0a0d30",
       players: this.players.map((player) => ({
         name: player.name,
         color: player.color,
