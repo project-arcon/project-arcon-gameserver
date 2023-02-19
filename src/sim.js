@@ -56,6 +56,10 @@
 
   window.types = {};
 
+  window.isFiniteV2Array = function (a) {
+    return (Array.isArray(a) || a instanceof Float64Array) && a.length === 2 && Number.isFinite(a[0]) && Number.isFinite(a[1]);
+  };
+
   isArray = function (a) {
     if (Array.isArray(a)) {
       return true;
@@ -115,7 +119,9 @@
   };
 
   validPoint = function (pos) {
-    if (typeof pos !== "object") return [0, 0];
+    if (typeof pos !== "object") {
+      return [0, 0];
+    }
     pos[0] = isNaN(pos[0]) ? 0 : Number(pos[0]);
     pos[1] = isNaN(pos[1]) ? 0 : Number(pos[1]);
     return pos;
@@ -134,6 +140,8 @@
 
     Sim.prototype.serverType = "3v3";
 
+    //Sim.prototype.countDown = 1;
+
     Sim.prototype.lastId = 0;
 
     Sim.prototype.costLimit = 1000;
@@ -143,7 +151,7 @@
     Sim.prototype.nGamesPlayed = 0;
 
     Sim.prototype.validTypes = {
-      sandbox: "sandbox",
+      //"sandbox": "sandbox",
       "1v1": "1v1",
       "1v1r": "1v1r",
       "1v1t": "1v1t",
@@ -152,7 +160,9 @@
       survival: "survival",
     };
 
-    Sim.prototype.say = function (message) {
+    Sim.prototype.say = function (message, rootName) {
+      server.say(message, rootName);
+      /*
       if (typeof server !== "undefined" && server !== null) {
         return server.say(message);
       } else if (this.local) {
@@ -162,11 +172,70 @@
           name: "Server",
           server: true,
           channel: "local",
-          time: Date.now(),
+          time: Date.now()
         });
       } else {
         return print(message);
       }
+      */
+    };
+
+    Sim.prototype.sayToServer = function (key, ...args) {
+      this.say(translate(key, this.serverLang, ...args));
+    };
+
+    Sim.prototype.sayToServerSpecify = function (rootName, key, ...args) {
+      this.say(translate(key, this.serverLang, ...args), rootName);
+    };
+
+    Sim.prototype.getPlayerLang = function (name) {
+      return playerLangSheet[name];
+    };
+    Sim.prototype.sayToPlayer = function (p, key, ...args) {
+      var lang = this.serverLang;
+      if (p instanceof Player) {
+        lang = this.getPlayerLang(p.name) ?? "en";
+      }
+      this.say(translate(key, lang, ...args), p.ws.originRoot);
+    };
+
+    Sim.prototype.doEval = function (p, cmd) {
+      if (!mxserver.isSuperUser(p)) {
+        return;
+      }
+      try {
+        var evalresult = eval(cmd);
+        console.log("EVAL:");
+        console.log(evalresult);
+        //this.say(evalresult);
+      } catch (e) {
+        //this.say("error");
+        console.error(e);
+      }
+      return;
+    };
+
+    Sim.prototype.simTouched = false;
+
+    Sim.prototype.touch = function () {
+      if (!this.simTouched) {
+        this.simTouched = true;
+        this.clearNetState();
+        console.log("sim touched");
+      }
+    };
+
+    Sim.prototype.shouldBeDestroyed = function () {
+      if (!sim.simTouched || sim.state !== "waiting") {
+        return false;
+      }
+      for (var l = 0, len = this.players.length; l < len; l++) {
+        var player = this.players[l];
+        if (!player.ai && player.connected && !player.afk) {
+          return false;
+        }
+      }
+      return true;
     };
 
     Sim.prototype.nid = function () {
@@ -187,6 +256,9 @@
       this.unitSpaces = {};
       this.projSpaces = {};
       this.zJson = new window.ZJson(prot.commonWords);
+      this.timeings = {};
+      this.timeStarts = {};
+      this.timePath = [];
     }
 
     Sim.prototype.start = function () {
@@ -217,6 +289,7 @@
       this.deaths = 0;
       this.nGamesPlayed += 1;
       this.clearNetState();
+      this.sayToServer("sim.seed_report", this.mapSeed);
       if (this.serverType === "survival") {
         return survival.start(this);
       }
@@ -252,7 +325,7 @@
       }
       if (this.serverType !== config.type) {
         this.serverType = config.type;
-        this.say(p.name + " changed server type to " + config.type);
+        this.sayToServer("players.config_game", p.name, type);
         if (typeof serverTick === "function") {
           serverTick();
         }
@@ -281,6 +354,10 @@
     };
 
     Sim.prototype.regenerateMap = function () {
+      if (this.mapSeed == null) {
+        this.mapSeed = Math.floor(Math.random() * 4294967295);
+      }
+      print("Map seed: " + this.mapSeed);
       return mapping.generate(this.mapSeed);
     };
 
@@ -331,6 +408,8 @@
         this.clearNetState();
       }
       this.playerEdit(_, pid, name, color, buildBar, aiRules, ai);
+      player.lastActiveTime = Date.now();
+      player.afk = false;
       return player;
     };
 
@@ -417,12 +496,12 @@
     };
 
     Sim.prototype.whoIsHost = function () {
-      var haveHost, l, len1, len2, m, p, ref, ref1, results;
+      var haveHost, l, len1, len2, m, p, ref, ref1;
       haveHost = false;
       ref = this.players;
       for (l = 0, len1 = ref.length; l < len1; l++) {
         p = ref[l];
-        if (p.host === true) {
+        if (p.host === true && !mxserver.isSuperUser(p)) {
           if (!p.connected || p.side === "spectators") {
             p.host = false;
             haveHost = false;
@@ -433,19 +512,27 @@
           }
         }
       }
+
+      for (l = 0, len1 = ref.length; l < len1; l++) {
+        p = ref[l];
+        if (mxserver.isSuperUser(p)) {
+          p.host = true;
+          if (p.connected && p.side !== "spectators") {
+            haveHost = true;
+          }
+          break;
+        }
+      }
+
       if (!haveHost) {
         ref1 = this.players;
-        results = [];
         for (m = 0, len2 = ref1.length; m < len2; m++) {
           p = ref1[m];
-          if (!p.ai && p.connected && p.side !== "spectators") {
+          if (!p.ai && p.connected && p.side !== "spectators" && !mxserver.isSuperUser(p)) {
             p.host = true;
             break;
-          } else {
-            results.push(void 0);
           }
         }
-        return results;
       }
     };
 
@@ -456,7 +543,13 @@
         if (this.noAIPlayers) {
           return;
         }
+        if (side != "alpha" && side != "beta") {
+          return;
+        }
         if (this.serverType === "1v1r") {
+          return;
+        }
+        if (this.serverType === "1v1t") {
           return;
         }
         if (this.serverType === "1v1") {
@@ -483,7 +576,7 @@
           return;
         }
       }
-      this.say(`${player.name} added ${name} to ${side}`);
+      this.sayToServer("players.addai", player.name, name, side);
       return ais.useAiFleet(name, side, aiBuildBar);
     };
 
@@ -496,13 +589,21 @@
         return;
       }
       player = this.players[number];
-      if (player) {
+      if (player && player.side !== "spectators") {
+        var oldSide = player.side;
+        if (player.host && !mxserver.isSuperUser(player) && mxserver.isSuperUser(p) && p.side !== "spectator") {
+          player.host = false;
+          return;
+        }
+
         player.side = "spectators";
-        player.kickTime = now();
+        if (!mxserver.isSuperUser(player)) {
+          player.kickTime = now();
+        }
         if (player.ai) {
           player.connected = false;
         }
-        return this.say(p.name + " kicked " + player.name);
+        this.sayToServer("players.kicked_from_team", p.name, player.name, oldSide);
       }
     };
 
@@ -529,6 +630,7 @@
       if (real == null) {
         real = false;
       }
+      /*
       if (this.local) {
         if (this.numInTeam("alpha") === 0 || this.numInTeam("beta") === 0) {
           this.say("Warning: One team has no players. You should add an AI to that team.");
@@ -536,6 +638,7 @@
         this.start();
         return;
       }
+      */
       if (!player.host) {
         print("A non-host player is trying to start game.");
         return;
@@ -547,8 +650,8 @@
       if (!this.canStart(true)) {
         return;
       }
-      this.say("Game is about to start!");
-      return (this.countDown = 16 * 6);
+      this.sayToServer("sim.starting_game");
+      return (this.countDown = this.serverType === "sandbox" ? 1 : 16 * 6);
     };
 
     Sim.prototype.canStart = function (sayStyff) {
@@ -563,13 +666,13 @@
       }
       if (this.numInTeam("alpha") !== this.playersPerTeam()) {
         if (sayStyff) {
-          this.say("Team alpha does not have enough players.");
+          this.sayToServer("sim.starting_rejected.team_missing_players", "alpha");
         }
         return false;
       }
       if (this.numInTeam("beta") !== this.playersPerTeam()) {
         if (sayStyff) {
-          this.say("Team beta does not have enough players.");
+          this.sayToServer("sim.starting_rejected.team_missing_players", "beta");
         }
         return false;
       }
@@ -806,6 +909,9 @@
       }
       if (number > 0) {
         for (i = l = 0, ref = number; 0 <= ref ? l < ref : l > ref; i = 0 <= ref ? ++l : --l) {
+          if (player.buildQ.length >= 1000) {
+            break;
+          }
           player.buildQ.push(name);
         }
       } else if (number < 0) {
@@ -930,7 +1036,7 @@
       } else {
         return;
       }
-      this.say(player.name + " surrenders");
+      this.sayToServer("players.surrenders", player.name);
       return this.endOfGame();
     };
 
@@ -943,20 +1049,17 @@
         if (player.ai) {
           if (player.side !== "spectators") {
             player.afk = false;
-            results.push((player.connected = true));
-          } else {
-            results.push(void 0);
+            player.connected = true;
           }
         } else if (!player.connected) {
-          results.push((player.afk = true));
+          player.afk = true;
         } else if (player.lastActiveTime < Date.now() - 1000 * 60 * 10) {
-          if (this.serverType !== "1v1r") {
-            results.push((player.afk = true));
-          } else {
-            results.push(void 0);
+          if (this.serverType !== "1v1r" && this.serverType !== "1v1rt") {
+            player.afk = true;
           }
         } else {
-          results.push((player.afk = false));
+          this.touch();
+          player.afk = false;
         }
       }
       return results;
@@ -977,7 +1080,7 @@
 
     Sim.prototype.startingSim = function () {
       if (this.state === "starting") {
-        this.state = "running";
+        this.state = this.serverType === "sandbox" ? "waiting" : "running";
       }
       if (this.state === "ended") {
         this.state = "waiting";
@@ -994,7 +1097,7 @@
         }
       }
       if (this.state === "waiting" && this.serverType === "1v1r" && this.canStart() && !this.countDown) {
-        this.say("Challenger appears, game is about to start!");
+        this.sayToServer("mode.rank.challenger_appears");
         return (this.countDown = 16 * 6);
       }
     };
@@ -1127,6 +1230,40 @@
           }
         }
       }
+
+      stillThere = false;
+      hasAIplayer = false;
+      ref1 = this.players;
+      for (l = 0, len1 = ref1.length; l < len1; l++) {
+        player = ref1[l];
+        if (player.ai) {
+          hasAIplayer = true;
+        }
+        if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
+          stillThere = true;
+        }
+      }
+      if (!stillThere) {
+        if (hasAIplayer) {
+          this.kickAllAis();
+        }
+        if (false && this.serverType !== "sandbox") {
+          this.serverType = "sandbox";
+          this.start();
+        } else {
+          ref = this.things;
+          for (id in ref) {
+            thing = ref[id];
+            if (thing.unit) {
+              thing.selfDestruct();
+            } else if (thing.bullet) {
+              thing.explode = false;
+              thing.life = thing.maxLife;
+            }
+          }
+        }
+      }
+
       return this.timeEnd("sim");
     };
 
@@ -1200,7 +1337,7 @@
           }
         }
         if (!stillThere) {
-          this.say("Every one left. Ending game.");
+          this.sayToServer("sim.end_of_game.empty_teams");
           this.winningSide = false;
           this.endOfGame();
         } else if (this.step > 16 * 60 * 30) {
@@ -1213,10 +1350,11 @@
     Sim.prototype.endOfGame = function () {
       var l, len1, player, ref;
       if (this.winningSide) {
-        this.say(this.winningSide + " has won!");
+        this.sayToServer("sim.gamereport.winner", this.winningSide);
       } else {
-        this.say("Game ends in a draw!");
+        this.sayToServer("sim.gamereport.draw");
       }
+      this.sayToServer("sim.gamereport.timer_legacy", parseTime(this.step / 16));
       this.numBattles += 1;
       if (this.numBattles > 100) {
         this.awaitRestart = true;
@@ -1232,9 +1370,9 @@
             if (player.side === this.winningSide) {
               player.streek += 1;
               if (player.streek === 1) {
-                this.say(player.name + " wins a battle");
+                this.sayToServer("mode.rank.win_streek_one", player.name);
               } else {
-                this.say(player.name + " wins " + player.streek + " battles");
+                this.sayToServer("mode.rank.win_streek", player.name, player.streek);
               }
               player.host = true;
             } else {
@@ -1242,7 +1380,7 @@
               player.host = false;
               player.streek = 0;
               if (this.winningSide) {
-                this.say(player.name + " lost and was kicked");
+                this.sayToServer("mode.rank.lost_kicked", player.name);
               }
               player.kickTime = now();
             }
@@ -1252,7 +1390,7 @@
       if (this.serverType === "survival") {
         survival.endOfGame(this);
       }
-      return (this.state = "ended");
+      this.state = "ended";
     };
 
     Sim.prototype.unitsCollide = function () {
@@ -1356,7 +1494,27 @@
       "hitPos",
     ];
 
-    Sim.prototype.playerFields = ["name", "side", "afk", "host", "money", "connected", "dead", "color", "mouse", "action", "buildQ", "validBar", "ai", "apm", "capps", "kills", "unitsBuilt", "moneyEarned", "rallyPoint"];
+    Sim.prototype.playerFields = [
+      "name",
+      "side",
+      "afk",
+      "host",
+      "money",
+      "connected",
+      "dead",
+      "color",
+      "mouse",
+      "action",
+      "buildQ",
+      "validBar",
+      "ai",
+      "apm",
+      "capps",
+      "kills",
+      "unitsBuilt",
+      "moneyEarned",
+      "rallyPoint",
+    ];
 
     Sim.prototype.simFields = ["serverType", "step", "theme", "state", "winningSide", "countDown"];
 
@@ -1581,13 +1739,15 @@
       if (this.step % 16 === 0) {
         send = false;
         ref13 = this.players;
+        /*
         for (z = 0, len8 = ref13.length; z < len8; z++) {
           player = ref13[z];
           if (player.name === "treeform" && player.connected) {
             send = true;
           }
         }
-        if (send) {
+        */
+        if (true || send) {
           data.perf = {
             numbers: {
               things: function () {
@@ -1685,11 +1845,13 @@
       return results;
     };
 
+    /*
     Sim.prototype.timeings = {};
 
     Sim.prototype.timeStarts = {};
 
     Sim.prototype.timePath = [];
+    */
 
     Sim.prototype.timeStart = function (what) {
       this.timePath.push(what);
