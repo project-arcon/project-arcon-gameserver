@@ -149,10 +149,13 @@
     var a, fillColor, fns, r, spotColor;
     window.mr = new MTwist(seed);
     sim.things = {};
-    if (sim.serverType === "survival") {
-      survival.genSurvival();
-    } else {
-      genSymetrical();
+    switch (sim.startedInServerType) {
+      case "survival":
+        survival.genSurvival();
+        break;
+      default:
+        genSymetrical();
+        break;
     }
     if (true || mr.random() < 0.1) {
       //sim.theme = chooseOne(mapping.themes);
@@ -176,14 +179,14 @@
       /*
       fns = shuffle([genClouds, genDebree, genRocks, genDodads]);
       r = mr.random();
-      if (r < .2) {
+      if (r < 0.2) {
         fns.pop()();
         fns.pop()();
         return fns.pop()();
-      } else if (r < .5) {
+      } else if (r < 0.5) {
         fns.pop()();
         return fns.pop()();
-      } else if (r < .9) {
+      } else if (r < 0.9) {
         return fns.pop()();
       } else {
         return "nothing";

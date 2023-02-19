@@ -1,7 +1,7 @@
 (function () {
   window.mxserver = {};
 
-  mxserver.superusers = ["Magnusiiftun1857"];
+  mxserver.superusers = [];
   mxserver.blockedusers = [];
 
   mxserver.isSuperUser = function (player) {
