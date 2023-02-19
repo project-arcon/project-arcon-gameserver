@@ -23,9 +23,43 @@ const allowedCmds = [
   "surrender",
 ];
 
-global.sim = new Sim();
-Sim.prototype.cheatSimInterval = -12;
+global.sim = null;
+//Sim.prototype.cheatSimInterval = -12;
 Sim.prototype.lastSimInterval = 0;
+Sim.prototype.tickRate = 16;
+Sim.prototype.simTouched = false;
+Sim.prototype.sendGameReport = function () {
+  if (this.serverType == "sandbox" && this.step < 960) {
+    return;
+  }
+  let players = sim.players
+    .filter((p) => p.side !== "spectators")
+    .map((p) => {
+      return {
+        name: p.name,
+        color: p.color,
+        side: p.side,
+        ai: p.ai,
+      };
+    });
+  server.sendToRoot([
+    "game_report",
+    {
+      ending_method: "unknow",
+      winning_side: this.winningSide,
+      ranked: ["1v1r", "1v1t"].includes(this.serverType),
+      step: this.step,
+      realtime: this.step / 16.0,
+      mode: this.serverType,
+      map_seed: this.mapSeed,
+      players: players,
+    },
+  ]);
+};
+global.genSim = function () {
+  sim = new Sim();
+};
+genSim();
 
 var root = null;
 
@@ -35,6 +69,38 @@ global.Server = function () {
   this.queued = {};
 
   var lastInfoTime = 0;
+
+  this.regenSim = function () {
+    genSim();
+    var anyJoined = false;
+    var touched = false;
+    for (var id in players) {
+      var oldPlayerData = players[id].playerJoinData;
+      var oldWs = players[id].ws;
+      var oldAfk = players[id].afk;
+      var oldActive = players[id].lastActiveTime;
+
+      var player = sim.playerJoin(...oldPlayerData);
+      player.playerJoinData = oldPlayerData;
+      player.ws = oldWs;
+      player.afk = oldAfk;
+      player.lastActiveTime = oldActive;
+      //ws.playerId = id;
+      players[id] = player;
+
+      anyJoined = true;
+      if (!oldAfk) {
+        touched = true;
+      }
+    }
+    if (anyJoined) {
+      sim.clearNetState();
+    }
+    if (touched) {
+      sim.touch();
+    }
+  };
+
   this.send = (player, data) => {
     let packet = sim.zJson.dumpDv(data);
     let client = player.ws;
@@ -68,6 +134,7 @@ global.Server = function () {
 
   this.executePlayerJoin = (data, ws) => {
     let player = sim.playerJoin(...data);
+    player.playerJoinData = data;
     player.ws = ws;
     player.isValid = true;
     players[ws.id] = player;
@@ -204,26 +271,51 @@ global.Server = function () {
   });
 
   var interval = setInterval(() => {
-    let rightNow = now();
-    if (sim.lastSimInterval + 1000 / 16 + sim.cheatSimInterval <= rightNow) {
-      sim.lastSimInterval = rightNow;
-
-      if (!sim.paused) {
-        sim.simulate();
-      } else {
-        sim.startingSim();
-      }
-
-      let packet = sim.send();
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(packet);
+    try {
+      let rightNow = now();
+      var simTimeDiff = rightNow - (sim.lastSimInterval + 1000 / sim.tickRate);
+      if (simTimeDiff >= 0) {
+        sim.lastSimInterval = rightNow - Math.min(1000, simTimeDiff);
+        if (simTimeDiff >= 1000 && rightNow - sim.accuLastSimInterval >= Math.max(1000 / sim.tickRate, 1000 / 16) * 2 && sim.lastCantKeepUp <= rightNow) {
+          sim.lastCantKeepUp = rightNow + 15000;
+          sim.sayToServer("server.cant_keep_up", Math.ceil(simTimeDiff));
         }
-      });
-    }
-    if (rightNow - lastInfoTime > 15000) {
-      sendInfo();
-      lastInfoTime = rightNow;
+        sim.accuLastSimInterval = rightNow;
+        if (!sim.paused || !sim.simTouched) {
+          sim.simulate();
+        } else {
+          sim.startingSim();
+        }
+        try {
+          let packet = sim.send();
+          wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(packet);
+            }
+          });
+        } catch (e) {
+          sim.sayToServer("server.crash.type.send");
+          throw e;
+        }
+      }
+      if (sim.shouldBeDestroyed()) {
+        console.log("no players connected, destroying sim");
+        this.regenSim();
+      }
+      if (rightNow - lastInfoTime > 15000) {
+        sendInfo();
+        lastInfoTime = rightNow;
+      }
+    } catch (e) {
+      console.error(e);
+      sim.sayToServer("server.crash.type.sim");
+      sim.sayToServer("server.crash.restart_sim");
+      if (sim.state === "running") {
+        sim.winningSide = "server crashed";
+        sim.sendGameReport();
+      }
+      this.regenSim();
+      //throw error;
     }
   }, 17);
 };
@@ -231,23 +323,5 @@ global.Server = function () {
 global.server = new Server();
 const originalEndOfGame = Sim.prototype.endOfGame;
 Sim.prototype.endOfGame = function () {
-  root.sendData([
-    "game_report",
-    {
-      ending_method: "unknow",
-      winning_side: this.winningSide,
-      step: this.step,
-      realtime: 0,
-      mode: this.serverType,
-      map_seed: "0a0d30",
-      players: this.players.map((player) => ({
-        name: player.name,
-        color: player.color,
-        side: player.side,
-        ai: player.ai,
-      })),
-    },
-  ]);
-
   originalEndOfGame.call(this);
 };
