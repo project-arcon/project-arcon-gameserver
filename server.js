@@ -1,7 +1,7 @@
 var config = require("./config.json");
 var WebSocket = require("ws");
 require("./fix");
-require("./arcon.js");
+require("./main-arcon.js");
 
 const allowedCmds = [
   "gameKey",
