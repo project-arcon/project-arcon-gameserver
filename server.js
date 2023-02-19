@@ -1,7 +1,7 @@
 var config = require("./config.json");
 var WebSocket = require("ws");
 require("./fix");
-require("./istrolid.js");
+require("./arcon.js");
 
 const allowedCmds = [
   "gameKey",
