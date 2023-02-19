@@ -199,22 +199,6 @@
       this.say(translate(key, lang, ...args), p.ws.originRoot);
     };
 
-    Sim.prototype.doEval = function (p, cmd) {
-      if (!mxserver.isSuperUser(p)) {
-        return;
-      }
-      try {
-        var evalresult = eval(cmd);
-        console.log("EVAL:");
-        console.log(evalresult);
-        //this.say(evalresult);
-      } catch (e) {
-        //this.say("error");
-        console.error(e);
-      }
-      return;
-    };
-
     Sim.prototype.simTouched = false;
 
     Sim.prototype.touch = function () {

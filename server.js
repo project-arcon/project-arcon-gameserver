@@ -321,7 +321,3 @@ global.Server = function () {
 };
 
 global.server = new Server();
-const originalEndOfGame = Sim.prototype.endOfGame;
-Sim.prototype.endOfGame = function () {
-  originalEndOfGame.call(this);
-};
