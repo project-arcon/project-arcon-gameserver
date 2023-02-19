@@ -1,10 +1,12 @@
-(function() {
+(function () {
   var libs = [
     "./src/mtwist.js",
     "./src/maths.js",
     "./src/hspace.js",
     "./src/zjson.js",
     "./src/protocol.js",
+    "./src/trans.js",
+    "./src/mxserver.js",
     "./src/utils.js",
     "./src/colors.js",
     "./src/maps.js",
@@ -16,12 +18,12 @@
     "./src/parts.js",
     "./src/ai.js",
     //"./src/aidata.js",
-    "./src/grid.js"
+    "./src/grid.js",
   ];
-  libs.forEach(key => {
+  libs.forEach((key) => {
     delete require.cache[require.resolve(key)];
   });
-  libs.forEach(key => {
+  libs.forEach((key) => {
     require(key);
   });
-}).call(this);
+}.call(this));

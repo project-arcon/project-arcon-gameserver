@@ -3650,7 +3650,13 @@
 
     ArtilleryBullet.prototype.image = "parts/fireLong1.png";
 
-    ArtilleryBullet.prototype.sound = ["sounds/weapons/artillery-1.wav", "sounds/weapons/artillery-2.wav", "sounds/weapons/artillery-3.wav", "sounds/weapons/artillery-4.wav", "sounds/weapons/artillery-5.wav"];
+    ArtilleryBullet.prototype.sound = [
+      "sounds/weapons/artillery-1.wav",
+      "sounds/weapons/artillery-2.wav",
+      "sounds/weapons/artillery-3.wav",
+      "sounds/weapons/artillery-4.wav",
+      "sounds/weapons/artillery-5.wav",
+    ];
 
     ArtilleryBullet.prototype.color = [255, 240, 244, 255];
 

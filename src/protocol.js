@@ -466,11 +466,10 @@
     "Wing2x1",
     "Wing2x2",
     "winningSide",
-    "z"
+    "z",
+    /*
+    "afk",
+    "waiting",
+    */
   ];
-
-  /*
-  afk
-  waiting
-   */
 }.call(this));

@@ -1153,7 +1153,7 @@
         case "Stop":
           return true;
         default:
-          sim.say("invalid order" + JSON.stringify(order));
+          print("invalid order" + JSON.stringify(order));
       }
       return true;
     };
@@ -1177,6 +1177,9 @@
 
     Unit.prototype.moveWithinRange = function (pos, range, noStop) {
       var dist, jumpDist, jumpVec;
+      if (!isFiniteV2Array(pos)) {
+        return false;
+      }
       dist = v2.distance(this.pos, pos);
       if (dist < range || (noStop && dist <= this.maxSpeed)) {
         if (noStop || !this.shouldLookAt(pos)) {
@@ -1560,6 +1563,12 @@
     Turret.prototype.canShoot = function (other) {
       var aimDistance, arcAngle, distance, ref, th;
       if (!other.unit && !(other.missile && this.hitsMissiles)) {
+        return false;
+      }
+      if (this.instant && other.unit && other.hp <= 0) {
+        return false;
+      }
+      if (this.instant && this.hitsMissiles && other.missile && other.life >= other.maxLife) {
         return false;
       }
       if (other.dead || other.applyDamage == null) {

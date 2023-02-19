@@ -396,7 +396,7 @@ General Game Objects live here
       this._pos2 = v2.create();
       this.rot = 0;
       if (this.sound) {
-        playSound(this.sound, this.soundVolume);
+        //playSound(this.sound, this.soundVolume);
       }
     }
 

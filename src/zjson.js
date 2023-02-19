@@ -88,6 +88,8 @@ zjson - binary json sirelizer with some strange features
 
     ZJson.prototype.STRING_MARK16 = 0x31;
 
+    ZJson.prototype.STRING_MARK32 = 0x54;
+
     ZJson.prototype.STRING_TABLE_MARK = 0x32;
 
     ZJson.prototype.NUMBER_MARK8 = 0x40;
@@ -129,173 +131,189 @@ zjson - binary json sirelizer with some strange features
     }
 
     ZJson.prototype.dumpDv = function (json) {
-      var buf, dv, end, i, j, ref;
-      this.i = 0;
-      this.dumpNode(json);
-      end = "END";
-      this.dv.setUint8(this.i, end.charCodeAt(0));
-      this.i += 1;
-      this.dv.setUint8(this.i, end.charCodeAt(1));
-      this.i += 1;
-      this.dv.setUint8(this.i, end.charCodeAt(2));
-      this.i += 1;
-      buf = new ArrayBuffer(this.i);
-      dv = new DataView(buf);
-      for (i = j = 0, ref = this.i; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-        dv.setUint8(i, this.dv.getUint8(i));
+      try {
+        var buf, dv, end, i, j, ref;
+        this.i = 0;
+        this.dumpNode(json);
+        end = "END";
+        this.dv.setUint8(this.i, end.charCodeAt(0));
+        this.i += 1;
+        this.dv.setUint8(this.i, end.charCodeAt(1));
+        this.i += 1;
+        this.dv.setUint8(this.i, end.charCodeAt(2));
+        this.i += 1;
+        buf = new ArrayBuffer(this.i);
+        dv = new DataView(buf);
+        for (i = j = 0, ref = this.i; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+          dv.setUint8(i, this.dv.getUint8(i));
+        }
+        return dv;
+      } catch (e) {
+        print("ERROR JSON");
+        print(json);
+        throw e;
       }
-      return dv;
     };
 
     ZJson.prototype.dumpNode = function (json) {
       var e, i, j, k, l, len, length, num, ref, results, results1, results2, v;
-      if (json === null) {
-        this.dv.setUint8(this.i, this.NULL_MARK);
-        this.i += 1;
-        return;
-      }
-      if (json === void 0) {
-        this.dv.setUint8(this.i, this.UNDEFINED_MARK);
-        this.i += 1;
-        return;
-      }
-      switch (typeof json) {
-        case "object":
-          if (json.length != null) {
-            length = json.length;
-            if (length === 0) {
-              this.dv.setUint8(this.i, this.ARRAY0_MARK);
-              this.i += 1;
-            } else if (length === 1) {
-              this.dv.setUint8(this.i, this.ARRAY1_MARK);
-              this.i += 1;
-            } else if (length === 2) {
-              this.dv.setUint8(this.i, this.ARRAY2_MARK);
-              this.i += 1;
-            } else if (length === 3) {
-              this.dv.setUint8(this.i, this.ARRAY3_MARK);
-              this.i += 1;
-            } else if (length === 4) {
-              this.dv.setUint8(this.i, this.ARRAY4_MARK);
-              this.i += 1;
-            } else if (length < MAX8) {
-              this.dv.setUint8(this.i, this.ARRAY_MARK8);
-              this.i += 1;
-              this.dv.setUint8(this.i, length);
-              this.i += 1;
-            } else if (length < MAX16) {
-              this.dv.setUint8(this.i, this.ARRAY_MARK16);
-              this.i += 1;
-              this.dv.setUint16(this.i, length);
-              this.i += 2;
+      try {
+        if (json === null) {
+          this.dv.setUint8(this.i, this.NULL_MARK);
+          this.i += 1;
+          return;
+        }
+        if (json === void 0) {
+          this.dv.setUint8(this.i, this.UNDEFINED_MARK);
+          this.i += 1;
+          return;
+        }
+        switch (typeof json) {
+          case "object":
+            if (json.length != null) {
+              length = json.length;
+              if (length === 0) {
+                this.dv.setUint8(this.i, this.ARRAY0_MARK);
+                this.i += 1;
+              } else if (length === 1) {
+                this.dv.setUint8(this.i, this.ARRAY1_MARK);
+                this.i += 1;
+              } else if (length === 2) {
+                this.dv.setUint8(this.i, this.ARRAY2_MARK);
+                this.i += 1;
+              } else if (length === 3) {
+                this.dv.setUint8(this.i, this.ARRAY3_MARK);
+                this.i += 1;
+              } else if (length === 4) {
+                this.dv.setUint8(this.i, this.ARRAY4_MARK);
+                this.i += 1;
+              } else if (length < MAX8) {
+                this.dv.setUint8(this.i, this.ARRAY_MARK8);
+                this.i += 1;
+                this.dv.setUint8(this.i, length);
+                this.i += 1;
+              } else if (length < MAX16) {
+                this.dv.setUint8(this.i, this.ARRAY_MARK16);
+                this.i += 1;
+                this.dv.setUint16(this.i, length);
+                this.i += 2;
+              } else {
+                throw "Array size of " + length + " not supproted";
+              }
+              results = [];
+              for (j = 0, len = json.length; j < len; j++) {
+                e = json[j];
+                results.push(this.dumpNode(e));
+              }
+              return results;
             } else {
-              throw "Array size of " + length + " not supproted";
+              length = 0;
+              for (k in json) {
+                v = json[k];
+                length += 1;
+              }
+              if (length < MAX8) {
+                this.dv.setUint8(this.i, this.OBJECT_MARK8);
+                this.i += 1;
+                this.dv.setUint8(this.i, length);
+                this.i += 1;
+              } else if (length < MAX16) {
+                this.dv.setUint8(this.i, this.OBJECT_MARK16);
+                this.i += 1;
+                this.dv.setUint16(this.i, length);
+                this.i += 2;
+              } else {
+                throw "Object size of " + length + " not supproted";
+              }
+              results1 = [];
+              for (k in json) {
+                v = json[k];
+                this.dumpNode(k);
+                results1.push(this.dumpNode(v));
+              }
+              return results1;
             }
-            results = [];
-            for (j = 0, len = json.length; j < len; j++) {
-              e = json[j];
-              results.push(this.dumpNode(e));
-            }
-            return results;
-          } else {
-            length = 0;
-            for (k in json) {
-              v = json[k];
-              length += 1;
-            }
-            if (length < MAX8) {
-              this.dv.setUint8(this.i, this.OBJECT_MARK8);
-              this.i += 1;
-              this.dv.setUint8(this.i, length);
-              this.i += 1;
-            } else if (length < MAX16) {
-              this.dv.setUint8(this.i, this.OBJECT_MARK16);
-              this.i += 1;
-              this.dv.setUint16(this.i, length);
-              this.i += 2;
+            break;
+          case "number":
+            if (Math.round(json) === json && json > 0 && json < 256 * 256 * 256 * 256) {
+              if (json < MAX8) {
+                this.dv.setUint8(this.i, this.NUMBER_MARK8);
+                this.i += 1;
+                this.dv.setUint8(this.i, json);
+                return (this.i += 1);
+              } else if (json < MAX16) {
+                this.dv.setUint8(this.i, this.NUMBER_MARK16);
+                this.i += 1;
+                this.dv.setUint16(this.i, json);
+                return (this.i += 2);
+              } else if (json < MAX32) {
+                this.dv.setUint8(this.i, this.NUMBER_MARK32);
+                this.i += 1;
+                this.dv.setUint32(this.i, json);
+                return (this.i += 4);
+              } else {
+                throw "Invalid number integer " + json + " not supported";
+              }
             } else {
-              throw "Object size of " + length + " not supproted";
-            }
-            results1 = [];
-            for (k in json) {
-              v = json[k];
-              this.dumpNode(k);
-              results1.push(this.dumpNode(v));
-            }
-            return results1;
-          }
-          break;
-        case "number":
-          if (Math.round(json) === json && json > 0 && json < 256 * 256 * 256 * 256) {
-            if (json < MAX8) {
-              this.dv.setUint8(this.i, this.NUMBER_MARK8);
+              this.dv.setUint8(this.i, this.NUMBER_MARK32F);
               this.i += 1;
-              this.dv.setUint8(this.i, json);
-              return (this.i += 1);
-            } else if (json < MAX16) {
-              this.dv.setUint8(this.i, this.NUMBER_MARK16);
-              this.i += 1;
-              this.dv.setUint16(this.i, json);
-              return (this.i += 2);
-            } else if (json < MAX32) {
-              this.dv.setUint8(this.i, this.NUMBER_MARK32);
-              this.i += 1;
-              this.dv.setUint32(this.i, json);
+              this.dv.setFloat32(this.i, json);
               return (this.i += 4);
+            }
+            break;
+          case "string":
+            num = this.str2num.get(json);
+            if (num != null) {
+              this.dv.setUint8(this.i, this.STRING_TABLE_MARK);
+              this.i += 1;
+              this.dv.setUint16(this.i, num);
+              return (this.i += 2);
             } else {
-              throw "Invalid number integer " + json + " not supported";
+              if (COLLECT_STATS) {
+                commonZJsonStrings[json] = (commonZJsonStrings[json] || 0) + 1;
+              }
+              length = json.length;
+              if (length < MAX8) {
+                this.dv.setUint8(this.i, this.STRING_MARK8);
+                this.i += 1;
+                this.dv.setUint8(this.i, json.length);
+                this.i += 1;
+              } else if (length < MAX16) {
+                this.dv.setUint8(this.i, this.STRING_MARK16);
+                this.i += 1;
+                this.dv.setUint16(this.i, json.length);
+                this.i += 2;
+              } else if (length < MAX32) {
+                this.dv.setUint8(this.i, this.STRING_MARK32);
+                this.i += 1;
+                this.dv.setUint32(this.i, json.length);
+                this.i += 2;
+              } else {
+                throw "String size of " + length + " not supproted";
+              }
+              results2 = [];
+              for (i = l = 0, ref = length; 0 <= ref ? l < ref : l > ref; i = 0 <= ref ? ++l : --l) {
+                this.dv.setUint8(this.i, json.charCodeAt(i));
+                results2.push((this.i += 1));
+              }
+              return results2;
             }
-          } else {
-            this.dv.setUint8(this.i, this.NUMBER_MARK32F);
-            this.i += 1;
-            this.dv.setFloat32(this.i, json);
-            return (this.i += 4);
-          }
-          break;
-        case "string":
-          num = this.str2num.get(json);
-          if (num != null) {
-            this.dv.setUint8(this.i, this.STRING_TABLE_MARK);
-            this.i += 1;
-            this.dv.setUint16(this.i, num);
-            return (this.i += 2);
-          } else {
-            if (COLLECT_STATS) {
-              commonZJsonStrings[json] = (commonZJsonStrings[json] || 0) + 1;
-            }
-            length = json.length;
-            if (length < MAX8) {
-              this.dv.setUint8(this.i, this.STRING_MARK8);
-              this.i += 1;
-              this.dv.setUint8(this.i, json.length);
-              this.i += 1;
-            } else if (length < MAX16) {
-              this.dv.setUint8(this.i, this.STRING_MARK16);
-              this.i += 1;
-              this.dv.setUint16(this.i, json.length);
-              this.i += 2;
+            break;
+          case "boolean":
+            if (json === true) {
+              this.dv.setUint8(this.i, this.BOOL_TRUE_MARK);
+              return (this.i += 1);
             } else {
-              throw "String size of " + length + " not supproted";
+              this.dv.setUint8(this.i, this.BOOL_FALSE_MARK);
+              return (this.i += 1);
             }
-            results2 = [];
-            for (i = l = 0, ref = length; 0 <= ref ? l < ref : l > ref; i = 0 <= ref ? ++l : --l) {
-              this.dv.setUint8(this.i, json.charCodeAt(i));
-              results2.push((this.i += 1));
-            }
-            return results2;
-          }
-          break;
-        case "boolean":
-          if (json === true) {
-            this.dv.setUint8(this.i, this.BOOL_TRUE_MARK);
-            return (this.i += 1);
-          } else {
-            this.dv.setUint8(this.i, this.BOOL_FALSE_MARK);
-            return (this.i += 1);
-          }
-          break;
-        default:
-          throw "Type " + typeof json + " not supported";
+            break;
+          default:
+            throw "Type " + typeof json + " not supported";
+        }
+      } catch (e) {
+        console.error("THE NUMBER IS " + String(this.i + " " + String(e) + " " + String(i) + " " + String(j) + " " + String(k) + " " + String(l)));
+        throw e;
       }
     };
 
@@ -384,12 +402,16 @@ zjson - binary json sirelizer with some strange features
           return this.num2str.get(num);
         case this.STRING_MARK8:
         case this.STRING_MARK16:
+        case this.STRING_MARK32:
           if (mark === this.STRING_MARK8) {
             length = dv.getUint8(this.i);
             this.i += 1;
           } else if (mark === this.STRING_MARK16) {
             length = dv.getUint16(this.i);
             this.i += 2;
+          } else if (mark === this.STRING_MARK32) {
+            length = dv.getUint32(this.i);
+            this.i += 4;
           } else {
             throw "String mark error";
           }
