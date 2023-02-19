@@ -20,7 +20,7 @@ npm install .
 ### 3. regusetr your server
 
 ```text
-npm register
+node register.js
 ```
 
 ### 4. Run the server
