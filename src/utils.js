@@ -89,7 +89,8 @@
     var n, ref, s;
     if (typeof process !== "undefined" && process !== null) {
       (ref = process.hrtime()), (s = ref[0]), (n = ref[1]);
-      return (s * 1000000 + n / 1000) / 1000;
+      //return (s * 1000000 + n / 1000) / 1000;
+      return s * 1000 + n / 1000000;
     } else {
       return performance.now();
     }

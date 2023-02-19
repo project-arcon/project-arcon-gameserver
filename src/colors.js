@@ -113,6 +113,9 @@
   ];
 
   colors.validate = function (a) {
+    if (typeof a !== "object") {
+      return [255, 255, 255, 255];
+    }
     var b, i, j, ref;
     b = [0, 0, 0, 0];
     for (i = j = 0; j < 4; i = ++j) {

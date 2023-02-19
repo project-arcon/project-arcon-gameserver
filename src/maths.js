@@ -1353,7 +1353,27 @@
   };
 
   m4.str = function (mat) {
-    return [f(mat[0]), f(mat[1]), f(mat[2]), f(mat[3]), "|", f(mat[4]), f(mat[5]), f(mat[6]), f(mat[7]), "|", f(mat[8]), f(mat[9]), f(mat[10]), f(mat[11]), "|", f(mat[12]), f(mat[13]), f(mat[14]), f(mat[15])].join(" ");
+    return [
+      f(mat[0]),
+      f(mat[1]),
+      f(mat[2]),
+      f(mat[3]),
+      "|",
+      f(mat[4]),
+      f(mat[5]),
+      f(mat[6]),
+      f(mat[7]),
+      "|",
+      f(mat[8]),
+      f(mat[9]),
+      f(mat[10]),
+      f(mat[11]),
+      "|",
+      f(mat[12]),
+      f(mat[13]),
+      f(mat[14]),
+      f(mat[15]),
+    ].join(" ");
   };
 
   q4 = {};
