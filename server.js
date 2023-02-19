@@ -43,7 +43,7 @@ Sim.prototype.sendGameReport = function () {
       };
     });
   server.sendToRoot([
-    "game_report",
+    "server:game_report",
     {
       ending_method: "unknow",
       winning_side: this.winningSide,
