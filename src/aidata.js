@@ -703,7 +703,13 @@
         { pos: [0, 0], type: "PlasmaTurret", dir: 0 },
       ],
       name: "",
-      aiRules: [["Field # for # of ship in slot # at priority #", 1, 2, 5, 1], ["@attackTypes enemy within #m", "Kite", 1000], ["Avoid over #damage shots", 20], ["Find units that are out of energy"], ["Try to field # every # seconds", 1, 35]],
+      aiRules: [
+        ["Field # for # of ship in slot # at priority #", 1, 2, 5, 1],
+        ["@attackTypes enemy within #m", "Kite", 1000],
+        ["Avoid over #damage shots", 20],
+        ["Find units that are out of energy"],
+        ["Try to field # every # seconds", 1, 35],
+      ],
     },
     {
       parts: [
@@ -2003,7 +2009,13 @@
         { pos: [10, -10], type: "HArmor1x1", dir: 0 },
       ],
       name: "",
-      aiRules: [["Avoid #dps danger areas", 10], ["Find units that are out of energy"], ["When #% of energy, @chargeTypes", 97, "Find recharger"], ["@capTypes Command Points within #m", "Capture", 10000], ["Try to field # every # seconds", 1, 45]],
+      aiRules: [
+        ["Avoid #dps danger areas", 10],
+        ["Find units that are out of energy"],
+        ["When #% of energy, @chargeTypes", 97, "Find recharger"],
+        ["@capTypes Command Points within #m", "Capture", 10000],
+        ["Try to field # every # seconds", 1, 45],
+      ],
     },
     {
       parts: [
@@ -6478,7 +6490,13 @@
         { pos: [0, 100], type: "PDTurret", dir: 0 },
       ],
       name: "",
-      aiRules: [["Stay in #m range of slot # units", 1500, 1], ["Avoid everything"], ["Stay in #m range of slot # units", 1400, 2], ["Field # at priority #", 1, 2], ["Try to field # every # seconds", 1, 40]],
+      aiRules: [
+        ["Stay in #m range of slot # units", 1500, 1],
+        ["Avoid everything"],
+        ["Stay in #m range of slot # units", 1400, 2],
+        ["Field # at priority #", 1, 2],
+        ["Try to field # every # seconds", 1, 40],
+      ],
     },
     {
       parts: [
@@ -6542,7 +6560,13 @@
         { pos: [0, 40], type: "ArtilleryTurret", dir: 0 },
       ],
       name: "",
-      aiRules: [["Avoid everything"], ["Stay in #m range of slot # units", 2500, 2], ["@attackTypes enemy within #m", "Attack", 10000], ["When #% of energy, @chargeTypes", 20, "Rest"], ["Field # for # of ship in slot # at priority #", 2, 1, 2, 2]],
+      aiRules: [
+        ["Avoid everything"],
+        ["Stay in #m range of slot # units", 2500, 2],
+        ["@attackTypes enemy within #m", "Attack", 10000],
+        ["When #% of energy, @chargeTypes", 20, "Rest"],
+        ["Field # for # of ship in slot # at priority #", 2, 1, 2, 2],
+      ],
     },
     {
       parts: [
@@ -11953,7 +11977,13 @@
         { pos: [10, -40], type: "VArmor1x2End", dir: 0 },
       ],
       name: "",
-      aiRules: [["Avoid everything"], ["@capTypes Command Points within #m", "Capture", 600], ["Find units that are out of energy"], ["Stay in #m range of slot # units", 650, 3], ["Try to field # every # seconds", 1, 35]],
+      aiRules: [
+        ["Avoid everything"],
+        ["@capTypes Command Points within #m", "Capture", 600],
+        ["Find units that are out of energy"],
+        ["Stay in #m range of slot # units", 650, 3],
+        ["Try to field # every # seconds", 1, 35],
+      ],
     },
     "",
     "",
@@ -12172,7 +12202,13 @@
         { pos: [0, 0], type: "TeslaTurret", dir: 0 },
       ],
       name: "",
-      aiRules: [["Stay in #m range of slot # units", 800, 1], ["Avoid everything"], ["Stay in #m range of slot # units", 1200, 2], ["Field # at priority #", 1, 2], ["Try to field # every # seconds", 1, 40]],
+      aiRules: [
+        ["Stay in #m range of slot # units", 800, 1],
+        ["Avoid everything"],
+        ["Stay in #m range of slot # units", 1200, 2],
+        ["Field # at priority #", 1, 2],
+        ["Try to field # every # seconds", 1, 40],
+      ],
     },
     {
       parts: [
@@ -13665,7 +13701,13 @@
         { pos: [80, 40], type: "PDTurret", dir: 0 },
       ],
       name: "",
-      aiRules: [["Avoid #dps danger areas", 20], ["Avoid over #damage shots", 25], ["Find units that are out of energy"], ["Field # for # of ship in slot # at priority #", 1, 2, 1, 1], ["Field # for # of ship in slot # at priority #", 1, 6, 2, 1]],
+      aiRules: [
+        ["Avoid #dps danger areas", 20],
+        ["Avoid over #damage shots", 25],
+        ["Find units that are out of energy"],
+        ["Field # for # of ship in slot # at priority #", 1, 2, 1, 1],
+        ["Field # for # of ship in slot # at priority #", 1, 6, 2, 1],
+      ],
     },
     {
       parts: [
