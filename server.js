@@ -120,8 +120,8 @@ global.Server = function () {
   };
 
   this.say = (msg) => {
-    root.sendData([
-      "message",
+    this.sendToRoot([
+      "server:message",
       {
         text: msg,
         channel: config.name,
@@ -147,7 +147,7 @@ global.Server = function () {
     root.on("open", () => {
       console.log("connected to root");
 
-      root.sendData([
+      this.sendToRoot([
         "server:auth_sign_in",
         {
           email: config.email,
@@ -225,7 +225,7 @@ global.Server = function () {
       version: VERSION,
       state: sim.state,
     };
-    root.sendData(["server:set_server", info]);
+    this.sendToRoot(["server:set_server", info]);
   };
 
   connectToRoot();
@@ -253,7 +253,7 @@ global.Server = function () {
           console.log(data[1], data[2]);
           ws.gameKey = data[2];
           this.queued[ws.gameKey] = ws;
-          root.sendData(["server:check_player", ws.gameKey]);
+          this.sendToRoot(["server:check_player", ws.gameKey]);
         } else if (players[id].isValid) {
           if (allowedCmds.includes(data[0])) {
             sim[data[0]].apply(sim, [players[id], ...data.slice(1)]);
