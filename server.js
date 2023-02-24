@@ -76,22 +76,25 @@ global.Server = function () {
     var anyJoined = false;
     var touched = false;
     for (var id in players) {
-      var oldPlayerData = players[id].playerJoinData;
-      var oldWs = players[id].ws;
-      var oldAfk = players[id].afk;
-      var oldActive = players[id].lastActiveTime;
-
-      var player = sim.playerJoin(...oldPlayerData);
-      player.playerJoinData = oldPlayerData;
-      player.ws = oldWs;
-      player.afk = oldAfk;
-      player.lastActiveTime = oldActive;
-      //ws.playerId = id;
-      players[id] = player;
-
-      anyJoined = true;
-      if (!oldAfk) {
-        touched = true;
+      var oldPlayer = players[id];
+      if (oldPlayer.connected && oldPlayer.ws) {
+        var oldPlayerData = oldPlayer.playerJoinData;
+        var oldWs = oldPlayer.ws;
+        var oldAfk = oldPlayer.afk;
+        var oldActive = oldPlayer.lastActiveTime;
+  
+        var player = sim.playerJoin(...oldPlayerData);
+        player.playerJoinData = oldPlayerData;
+        player.ws = oldWs;
+        player.afk = oldAfk;
+        player.lastActiveTime = oldActive;
+        //ws.playerId = id;
+        players[id] = player;
+  
+        anyJoined = true;
+        if (!oldAfk) {
+          touched = true;
+        }
       }
     }
     if (anyJoined) {
