@@ -153,8 +153,8 @@
     Sim.prototype.validTypes = {
       //"sandbox": "sandbox",
       "1v1": "1v1",
-      "1v1r": "1v1r",
-      "1v1t": "1v1t",
+      //"1v1r": "1v1r",
+      //"1v1t": "1v1t",
       "2v2": "2v2",
       "3v3": "3v3",
       survival: "survival",
