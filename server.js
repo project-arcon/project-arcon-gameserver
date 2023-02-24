@@ -1,4 +1,5 @@
-var config = require("./config.json");
+var config_network = require("./config_network.json");
+var config_auth = require("./config_auth.json");
 var WebSocket = require("ws");
 require("./fix");
 require("./main-arcon.js");
@@ -64,7 +65,7 @@ genSim();
 var root = null;
 
 global.Server = function () {
-  var wss = new WebSocket.Server({ port: process.env.PORT || config.port });
+  var wss = new WebSocket.Server({ port: process.env.PORT || config_network.port });
   var players = {};
   this.queued = {};
 
@@ -124,7 +125,7 @@ global.Server = function () {
       "server:message",
       {
         text: msg,
-        channel: config.name,
+        channel: config_auth.name,
         color: "FFFFFF",
         name: "Server",
         server: true,
@@ -142,7 +143,7 @@ global.Server = function () {
   };
 
   var connectToRoot = () => {
-    root = new WebSocket(config.root_addr);
+    root = new WebSocket(config_network.root_addr);
 
     root.on("open", () => {
       console.log("connected to root");
@@ -150,8 +151,8 @@ global.Server = function () {
       this.sendToRoot([
         "server:auth_sign_in",
         {
-          email: config.email,
-          token: config.token,
+          email: config_auth.email,
+          token: config_auth.token,
         },
       ]);
 
@@ -209,8 +210,8 @@ global.Server = function () {
   var sendInfo = () => {
     // Send server info
     let info = {
-      name: config.name,
-      address: "ws://" + config.addr + ":" + config.port,
+      name: config_auth.name,
+      address: "ws://" + config_network.addr + ":" + config_network.port,
       observers: sim.players.filter((p) => p.connected && !p.ai).length,
       players: sim.players
         .filter((p) => p.connected && !p.ai)
